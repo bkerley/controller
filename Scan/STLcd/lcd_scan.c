@@ -682,4 +682,3 @@ void cliFunc_lcdDisp( char* args )
 		SPI_write( &value, 1 );
 	}
 }
-

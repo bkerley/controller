@@ -24,96 +24,96 @@ from PIL import Image # Use pillow instead of PIL, it works with Python 3
 
 # Convenience class to deal with converting images to a C array
 class STLcdGraphic:
-	# Some constants for the LCD Driver
-	page_width = 8
-	page_max_length = 132
+        # Some constants for the LCD Driver
+        page_width = 8
+        page_max_length = 132
 
-	array('B')
+        array('B')
 
-	def __init__( self, height, width ):
-		self.height = height
-		self.width  = width
+        def __init__( self, height, width ):
+                self.height = height
+                self.width  = width
 
-		# Calculate number of pages
-		self.page_count  = int( self.height / self.page_width )
-		self.page_length = self.width
+                # Calculate number of pages
+                self.page_count  = int( self.height / self.page_width )
+                self.page_length = self.width
 
-		# Initialize pages to 0's
-		self.page_data = []
-		for page in range( 0, self.page_count ):
-			self.page_data.append( array( 'B', [0] * self.page_length ) )
+                # Initialize pages to 0's
+                self.page_data = []
+                for page in range( 0, self.page_count ):
+                        self.page_data.append( array( 'B', [0] * self.page_length ) )
 
-	def setpixel( self, x, y ):
-		# Calculate which page
-		page = int( ( self.height - y ) / self.page_width )
+        def setpixel( self, x, y ):
+                # Calculate which page
+                page = int( ( self.height - y ) / self.page_width )
 
-		if page == 4:
-			print("YAR", (x,y))
+                if page == 4:
+                        print("YAR", (x,y))
 
-		# Calculate which byte
-		byte = x
+                # Calculate which byte
+                byte = x
 
-		# Calculate which bit
-		bit = int( ( self.height - y ) % self.page_width )
+                # Calculate which bit
+                bit = int( ( self.height - y ) % self.page_width )
 
-		# Set pixel bit
-		self.page_data[ page ][ byte ] |= (1 << bit)
+                # Set pixel bit
+                self.page_data[ page ][ byte ] |= (1 << bit)
 
-	def getpage( self, page ):
-		return self.page_data[ page ]
+        def getpage( self, page ):
+                return self.page_data[ page ]
 
-	def getarray( self ):
-		struct = "{\n"
+        def getarray( self ):
+                struct = "{\n"
 
-		for page in range( 0, self.page_count ):
-			for elem in self.page_data[ page ]:
-				struct += "0x{0:02x}, ".format( elem )
+                for page in range( 0, self.page_count ):
+                        for elem in self.page_data[ page ]:
+                                struct += "0x{0:02x}, ".format( elem )
 
-			if page != self.page_count - 1:
-				struct += "\n"
+                        if page != self.page_count - 1:
+                                struct += "\n"
 
-		struct += "\n}"
+                struct += "\n}"
 
-		return struct
+                return struct
 
-	# Prints out what the image will look like on the display
-	def preview( self ):
-		# Top border first
-		display = "+"
-		for pixel in range( 0, self.width ):
-			display += "-"
-		display += "+\n"
+        # Prints out what the image will look like on the display
+        def preview( self ):
+                # Top border first
+                display = "+"
+                for pixel in range( 0, self.width ):
+                        display += "-"
+                display += "+\n"
 
-		# Each Page
-		for page in range( self.page_count - 1, -1, -1 ):
-			# Each Bit (Line)
-			for line in range( 7, -1, -1 ):
-				# Border
-				display += "|"
+                # Each Page
+                for page in range( self.page_count - 1, -1, -1 ):
+                        # Each Bit (Line)
+                        for line in range( 7, -1, -1 ):
+                                # Border
+                                display += "|"
 
-				# Each Byte (Column/Pixel)
-				for byte in range( 0, self.width ):
-					if self.page_data[ page ][ byte ] & (1 << line):
-						display += "*"
-					else:
-						display += " "
+                                # Each Byte (Column/Pixel)
+                                for byte in range( 0, self.width ):
+                                        if self.page_data[ page ][ byte ] & (1 << line):
+                                                display += "*"
+                                        else:
+                                                display += " "
 
-				# Border
-				display += "|\n"
+                                # Border
+                                display += "|\n"
 
-		# Bottom border
-		display += "+"
-		for pixel in range( 0, self.width ):
-			display += "-"
-		display += "+\n"
+                # Bottom border
+                display += "+"
+                for pixel in range( 0, self.width ):
+                        display += "-"
+                display += "+\n"
 
-		return display
+                return display
 
 
 filename = sys.argv[1]
 if filename is None:
-	print( "You must specify a bitmap filename. Try './bitmap2Struct.py ic_logo_lcd.bmp'" )
-	sys.exit( 1 )
+        print( "You must specify a bitmap filename. Try './bitmap2Struct.py ic_logo_lcd.bmp'" )
+        sys.exit( 1 )
 max_height = 32
 max_width = 128
 x_offset = 0
@@ -124,19 +124,19 @@ output_image = STLcdGraphic( max_height, max_width )
 
 # Load the input filename and convert to black & white
 try:
-	input_image = Image.open( filename ).convert('1')
+        input_image = Image.open( filename ).convert('1')
 except:
-	print( "Unable to load image '{0}'".format( filename ) )
+        print( "Unable to load image '{0}'".format( filename ) )
 
 # Check the image size to see if within the bounds of the display
 if input_image.size[0] > max_width or input_image.size[1] > max_height:
-	print( "ERROR: '{0}:{1}' is too large, must be no larger than {2}x{3}".format(
-		filename,
-		( input_image.format, input_image.size, input_image.mode ),
-		max_width,
-		max_height )
-	)
-	sys.exit( 1 )
+        print( "ERROR: '{0}:{1}' is too large, must be no larger than {2}x{3}".format(
+                filename,
+                ( input_image.format, input_image.size, input_image.mode ),
+                max_width,
+                max_height )
+        )
+        sys.exit( 1 )
 
 # Center the image
 height_start = int( ( max_height - input_image.size[1] ) / 2 )
@@ -153,39 +153,39 @@ width_end    = int( width_start + input_image.size[0] )
 # Also prepare the debug view of the image (disp_test)
 disp_test = "+"
 for pixel in range( 0, max_width ):
-	disp_test += "-"
+        disp_test += "-"
 disp_test += "+\n"
 
 for y in range( 0, max_height ):
-	disp_test += "|"
+        disp_test += "|"
 
-	# Check if within height range
-	if not ( y >= height_start and y < height_end ):
-		disp_test += " " * max_width + "|\n|"
-		continue
+        # Check if within height range
+        if not ( y >= height_start and y < height_end ):
+                disp_test += " " * max_width + "|\n|"
+                continue
 
-	for x in range( 0, max_width ):
-		# Check if within width range
-		if not ( x >= width_start and x < width_end ):
-			disp_test += " "
-			continue
+        for x in range( 0, max_width ):
+                # Check if within width range
+                if not ( x >= width_start and x < width_end ):
+                        disp_test += " "
+                        continue
 
-		# Use image value to determine pixel
-		try:
-			if input_image.getpixel( (x - width_start, y - height_start) ) == 0:
-				disp_test += "*"
-				output_image.setpixel( x, y + 1 ) # +1 is due to page boundary
-			else:
-				disp_test += " "
-		except IndexError:
-			print( (x - width_start,y - height_start) )
-			pass
+                # Use image value to determine pixel
+                try:
+                        if input_image.getpixel( (x - width_start, y - height_start) ) == 0:
+                                disp_test += "*"
+                                output_image.setpixel( x, y + 1 ) # +1 is due to page boundary
+                        else:
+                                disp_test += " "
+                except IndexError:
+                        print( (x - width_start,y - height_start) )
+                        pass
 
-	disp_test += "|\n"
+        disp_test += "|\n"
 
 disp_test += "+"
 for pixel in range( 0, max_width ):
-	disp_test += "-"
+        disp_test += "-"
 disp_test += "+\n"
 
 # BMP Conversion preview
@@ -195,4 +195,3 @@ print( disp_test )
 print ( output_image.preview() )
 #print ()
 print( "uint8_t array[] = {0};".format( output_image.getarray() ) )
-
